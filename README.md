@@ -26,5 +26,5 @@ You can fire up the game in ruffle in firefox browser load the swf from the offi
 Or make an offline flashpoint curration for home use 
 
 NOTE IT IS STRICTLY FORBIDDEN TO CURRATE ANYTHING NITRONOME RELATED TO FLASHPOINT.
-Nitrome should only played from nitrome.com
+Nitrome games should only played from nitrome.com
 
