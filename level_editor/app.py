@@ -13,7 +13,7 @@ from .model import Level, PathEntry, SignEntry
 
 CELL_SIZE = 22
 RULER_SIZE = 24
-AREAS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "areas")
+AREAS_DIR = "areas"
 
 
 # ---------------------------------------------------------------------------
