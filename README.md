@@ -13,7 +13,9 @@ or just run the exe from level_editor/main.exe
 ## How to load created levels
 
 I cant help you with that.
+
 Here are some hints:
+
 1.Game url: http://cdn.nitrome.com/games/jackfrost/jackfrost.swf
 
 2.Here is where the game tries to load the first level from: http://www.nitrome.com/games/jackfrost/areas/178977703c66276066a776a56de3c1a1.xml
