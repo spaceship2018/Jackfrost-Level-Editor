@@ -10,6 +10,13 @@ python level_editor/main.py
 or just run the exe from level_editor/main.exe
 ```
 
+## Build
+
+```
+pyinstaller main.py --onefile
+```
+
+
 ## How to load created levels
 
 I cant help you with that.
