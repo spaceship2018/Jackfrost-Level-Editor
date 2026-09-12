@@ -23,7 +23,7 @@ try:
 except ImportError:  # Pillow not installed - degrade gracefully
     _HAVE_PIL = False
 
-IMAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
+IMAGES_DIR ="images"
 
 # Native pixel size of one ground block in the exported art. Used to scale
 # everything else (objects, bg art) to the editor's cell size consistently,
