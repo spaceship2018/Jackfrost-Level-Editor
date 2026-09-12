@@ -23,7 +23,7 @@ try:
 except ImportError:  # Pillow not installed - degrade gracefully
     _HAVE_PIL = False
 
-IMAGES_DIR = "images"
+IMAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
 
 # Native pixel size of one ground block in the exported art. Used to scale
 # everything else (objects, bg art) to the editor's cell size consistently,
@@ -111,6 +111,22 @@ def thumbnail(layer: str, value: int, max_size: int = 24):
     return get_image(layer, value, max(1, round(w * scale)), max(1, round(h * scale)))
 
 
+def get_pil_image(layer: str, value: int, target_w: int, target_h: int):
+    """Returns a raw PIL Image (RGBA) resized to (target_w, target_h), or
+    None if Pillow isn't available or there's no sprite for this id. For
+    compositing into another PIL image (e.g. exporting a level to PNG),
+    not for on-screen Tkinter display - use get_image() for that."""
+    if not _HAVE_PIL:
+        return None
+    _scan()
+    path = _files.get(layer, {}).get(value)
+    if not path:
+        return None
+    target_w, target_h = max(1, int(target_w)), max(1, int(target_h))
+    with Image.open(path) as pil_img:
+        return pil_img.convert("RGBA").resize((target_w, target_h), Image.LANCZOS)
+
+
 def get_image(layer: str, value: int, target_w: int, target_h: int):
     """Returns a PhotoImage resized to (target_w, target_h), or None if no
     sprite is available for this id. Cached per (layer, id, size)."""
@@ -124,9 +140,8 @@ def get_image(layer: str, value: int, target_w: int, target_h: int):
     if img is not None:
         return img
     if _HAVE_PIL:
-        with Image.open(path) as pil_img:
-            pil_img = pil_img.convert("RGBA").resize((target_w, target_h), Image.LANCZOS)
-            img = ImageTk.PhotoImage(pil_img)
+        pil_img = get_pil_image(layer, value, target_w, target_h)
+        img = ImageTk.PhotoImage(pil_img)
     else:
         img = tk.PhotoImage(file=path)
         orig_w, orig_h = img.width(), img.height()

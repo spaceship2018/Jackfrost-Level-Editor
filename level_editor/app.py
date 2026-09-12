@@ -5,15 +5,15 @@ import os
 import shutil
 import subprocess
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import List, Optional, Tuple
 
-from . import constants, level_names, sprites, xml_io
+from . import constants, export_image, level_names, sprites, xml_io
 from .model import Level, PathEntry, SignEntry
 
 CELL_SIZE = 22
 RULER_SIZE = 24
-AREAS_DIR = "areas"
+AREAS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "areas")
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +165,7 @@ class App(tk.Tk):
         self.waypoint_mode = False
         self.selected_path_index: Optional[int] = None
         self.icon_style = "sprite"  # or "vector"
+        self.show_gridlines = True
         self._bulk_redraw = False
 
         self.undo_stack: List[Command] = []
@@ -192,6 +193,7 @@ class App(tk.Tk):
         ttk.Label(toolbar, text="  (or right-click the row/col ruler)").pack(side="left")
         ttk.Separator(toolbar, orient="vertical").pack(side="left", fill="y", padx=6)
         ttk.Button(toolbar, text="Open XML in Notepad", command=self._open_in_notepad).pack(side="left", padx=2)
+        ttk.Button(toolbar, text="Export level image", command=self._export_level_image).pack(side="left", padx=2)
         ttk.Button(toolbar, text="Settings", command=self._open_settings).pack(side="left", padx=2)
         self.status_var = tk.StringVar(value="No level loaded")
         ttk.Label(toolbar, textvariable=self.status_var).pack(side="right", padx=8)
@@ -225,6 +227,12 @@ class App(tk.Tk):
                 layer_bar, text=f"show {layer}", variable=var,
                 command=lambda l=layer: self._on_visibility_change(l),
             ).pack(side="left", padx=(0, 10))
+
+        self._gridlines_var = tk.BooleanVar(value=self.show_gridlines)
+        ttk.Checkbutton(
+            layer_bar, text="show gridlines", variable=self._gridlines_var,
+            command=self._on_gridlines_change,
+        ).pack(side="left", padx=(0, 10))
 
         canvas_frame = ttk.Frame(center)
         canvas_frame.pack(side="top", fill="both", expand=True)
@@ -433,6 +441,42 @@ class App(tk.Tk):
         except OSError as exc:
             messagebox.showerror("Could not open Notepad", str(exc))
 
+    def _export_level_image(self) -> None:
+        if not self.level or not self.current_ref:
+            messagebox.showinfo("No level loaded", "Load a level first.")
+            return
+        if not export_image._HAVE_PIL:  # noqa: SLF001
+            messagebox.showerror(
+                "Pillow required",
+                "Exporting a level image needs Pillow.\n\nInstall it with:\n    pip install pillow",
+            )
+            return
+
+        path = filedialog.asksaveasfilename(
+            title="Export level image",
+            initialfile=f"{self.current_ref.friendly_name}.png",
+            defaultextension=".png",
+            filetypes=[("PNG image", "*.png"), ("JPEG image", "*.jpg *.jpeg"), ("All files", "*.*")],
+        )
+        if not path:
+            return
+
+        try:
+            img = export_image.render_level_image(
+                self.level, self.icon_style, self.layer_visible, self.show_gridlines,
+            )
+            if path.lower().endswith((".jpg", ".jpeg")):
+                flat = export_image.Image.new("RGB", img.size, export_image.BACKGROUND)
+                flat.paste(img, mask=img.split()[3])
+                flat.save(path, quality=95)
+            else:
+                img.save(path)
+        except Exception as exc:  # noqa: BLE001
+            messagebox.showerror("Export failed", str(exc))
+            return
+
+        self.status_var.set(f"Exported image to {path}")
+
     # -- level list ---------------------------------------------------------
 
     def _populate_level_list(self) -> None:
@@ -484,6 +528,16 @@ class App(tk.Tk):
 
     # -- canvas / grid --------------------------------------------------
 
+    def _gridline_color(self) -> str:
+        return "#cccccc" if self.show_gridlines else ""
+
+    def _on_gridlines_change(self) -> None:
+        self.show_gridlines = self._gridlines_var.get()
+        outline = self._gridline_color()
+        for row in self.cell_ids:
+            for rect in row:
+                self.canvas.itemconfig(rect, outline=outline)
+
     def rebuild_canvas(self) -> None:
         self.canvas.delete("all")
         self.cell_ids = []
@@ -498,7 +552,7 @@ class App(tk.Tk):
                 x0, y0 = c * CELL_SIZE, r * CELL_SIZE
                 x1, y1 = x0 + CELL_SIZE, y0 + CELL_SIZE
                 rect = self.canvas.create_rectangle(
-                    x0, y0, x1, y1, outline="#cccccc", fill="", tags="ground_layer"
+                    x0, y0, x1, y1, outline=self._gridline_color(), fill="", tags="ground_layer"
                 )
                 row_ids.append(rect)
                 row_markers.append([])
