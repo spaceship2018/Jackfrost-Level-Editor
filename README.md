@@ -25,11 +25,11 @@ Steps:
 
 2. Add the game direct url to ruffle :http://cdn.nitrome.com/games/jackfrost/jackfrost.swf
 
-3 Cntr+Shift+I for web developer options than network tab 
+3. Cntr+Shift+I for web developer options than network tab 
 
 4. Hit reload button
 
-5.Run the game open any level 
+5. Run the game open any level 
 
 6. After openning a level you will see a network request  fetching an xml file from nitrone.com this is the original level file.
 
